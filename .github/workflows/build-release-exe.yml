@@ -30,7 +30,7 @@ jobs:
       - name: Build EXE
         shell: bash
         run: |
-          pyinstaller --noconfirm --clean --windowed \
+          pyinstaller --noconfirm --clean --windowed --onefile \
             --name miWatermark-GUI \
             --add-data "watermark;watermark" \
             仿小米水印界面版.py
@@ -39,7 +39,15 @@ jobs:
         shell: bash
         run: |
           cd dist
-          7z a -tzip ../miWatermark-GUI-${{ github.ref_name }}-windows.zip miWatermark-GUI.exe
+          if [ -f miWatermark-GUI.exe ]; then
+            7z a -tzip ../miWatermark-GUI-${{ github.ref_name }}-windows.zip miWatermark-GUI.exe
+          elif [ -d miWatermark-GUI ]; then
+            7z a -tzip ../miWatermark-GUI-${{ github.ref_name }}-windows.zip miWatermark-GUI
+          else
+            echo "Build output not found in dist/."
+            ls -la
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

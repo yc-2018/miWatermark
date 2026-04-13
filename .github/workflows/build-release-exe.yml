@@ -1,0 +1,63 @@
+name: Build and Release EXE
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pillow piexif pyqt5 pyinstaller
+
+      - name: Build EXE
+        shell: bash
+        run: |
+          pyinstaller --noconfirm --clean --windowed --onefile \
+            --name miWatermark-GUI \
+            --add-data "watermark;watermark" \
+            仿小米水印界面版.py
+
+      - name: Pack artifact
+        shell: bash
+        run: |
+          cd dist
+          if [ -f miWatermark-GUI.exe ]; then
+            7z a -tzip ../miWatermark-GUI-${{ github.ref_name }}-windows.zip miWatermark-GUI.exe
+          elif [ -d miWatermark-GUI ]; then
+            7z a -tzip ../miWatermark-GUI-${{ github.ref_name }}-windows.zip miWatermark-GUI
+          else
+            echo "Build output not found in dist/."
+            ls -la
+            exit 1
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: miWatermark-GUI-${{ github.ref_name }}-windows
+          path: miWatermark-GUI-${{ github.ref_name }}-windows.zip
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: miWatermark-GUI-${{ github.ref_name }}-windows.zip
+          generate_release_notes: true

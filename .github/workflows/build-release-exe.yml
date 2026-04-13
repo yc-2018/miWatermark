@@ -35,17 +35,14 @@ jobs:
             --add-data "watermark;watermark" \
             仿小米水印界面版.py
 
-      - name: Pack artifact
+      - name: Prepare release file
         shell: bash
         run: |
-          cd dist
-          if [ -f miWatermark-GUI.exe ]; then
-            7z a -tzip ../miWatermark-GUI-${{ github.ref_name }}-windows.zip miWatermark-GUI.exe
-          elif [ -d miWatermark-GUI ]; then
-            7z a -tzip ../miWatermark-GUI-${{ github.ref_name }}-windows.zip miWatermark-GUI
+          if [ -f dist/miWatermark-GUI.exe ]; then
+            cp dist/miWatermark-GUI.exe miWatermark-GUI-${{ github.ref_name }}-windows.exe
           else
-            echo "Build output not found in dist/."
-            ls -la
+            echo "Build output not found: dist/miWatermark-GUI.exe"
+            ls -la dist || true
             exit 1
           fi
 
@@ -53,11 +50,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: miWatermark-GUI-${{ github.ref_name }}-windows
-          path: miWatermark-GUI-${{ github.ref_name }}-windows.zip
+          path: miWatermark-GUI-${{ github.ref_name }}-windows.exe
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: miWatermark-GUI-${{ github.ref_name }}-windows.zip
+          files: miWatermark-GUI-${{ github.ref_name }}-windows.exe
           generate_release_notes: true
